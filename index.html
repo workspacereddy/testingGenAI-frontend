@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        textarea, input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #chatOutput, #predictionOutput {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Health Assistant</h1>
+
+    <!-- Chat Section -->
+    <div class="section">
+        <h2>Chat with Health Assistant</h2>
+        <textarea id="chatInput" rows="4" placeholder="Ask a health-related question..."></textarea>
+        <button onclick="sendChat()">Send</button>
+        <div id="chatOutput"></div>
+    </div>
+
+    <!-- Health Metrics Section -->
+    <div class="section">
+        <h2>Health Metrics Analysis</h2>
+        <input type="text" id="bloodPressure" placeholder="Blood Pressure (mmHg)">
+        <input type="text" id="bloodSugar" placeholder="Blood Sugar (mg/dL)">
+        <input type="text" id="cholesterol" placeholder="Cholesterol (mg/dL)">
+        <input type="text" id="heartRate" placeholder="Heart Rate (bpm)">
+        <input type="text" id="temperature" placeholder="Temperature (°F)">
+        <button onclick="analyzeHealth()">Analyze</button>
+        <div id="predictionOutput"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://testinggenai.onrender.com'; // Adjust this to match your FastAPI server URL
+
+        async function sendChat() {
+            const message = document.getElementById('chatInput').value;
+            if (!message) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                document.getElementById('chatOutput').innerText = data.response;
+                document.getElementById('chatInput').value = '';
+            } catch (error) {
+                document.getElementById('chatOutput').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        async function analyzeHealth() {
+            const data = {
+                bloodPressure: document.getElementById('bloodPressure').value,
+                bloodSugar: document.getElementById('bloodSugar').value,
+                cholesterol: document.getElementById('cholesterol').value,
+                heartRate: document.getElementById('heartRate').value,
+                temperature: document.getElementById('temperature').value
+            };
+
+            if (!Object.values(data).some(Boolean)) {
+                document.getElementById('predictionOutput').innerText = 'Please enter at least one value';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const result = await response.json();
+                document.getElementById('predictionOutput').innerText = result.prediction;
+            } catch (error) {
+                document.getElementById('predictionOutput').innerText = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
